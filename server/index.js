@@ -88,8 +88,8 @@ io.on('connection', socket => {
     })
 
     // Listening for message event
-    socket.on('message', ({name,text}) => {
-        const room =getUser(socket.id)?.room
+    socket.on('message', ({ name, text }) => {
+        const room = getUser(socket.id)?.room
 
         // Sending message and who it came from to all connected to server
         if (room) {
@@ -99,7 +99,7 @@ io.on('connection', socket => {
 
     // Listen for activity (keypress)
     socket.on('activity', (name) => {
-        const room =getUser(socket.id)?.room
+        const room = getUser(socket.id)?.room
         // Sends "{user} is typing..." to everyone else
         if (room) {
             socket.broadcast.to(room).emit('activity', name)
@@ -122,9 +122,10 @@ function buildMsg(name,text){
 // User functions
 
 // Adds user to a room and makes sure they're not a duplicate
-function activateUser(id,name,room){
-    const user = { id, name, room} // User is their id,name,and room
-    UsersState.setUsers([
+function activateUser(id, name, room){
+    // User is their id , name, and room
+    const user = { id, name, room} 
+    UserState.setUsers([
         ...UserState.users.filter(user => user.id !== id),
         user
     ])
@@ -145,10 +146,10 @@ function getUser(id){
 
 // Get user room
 function getUserinRoom(room){
-    return UsersState.users.filter(user => user.room == room)
+    return UserState.users.filter(user => user.room === room)
 }
 
 //Get all active chatrooms (set to avoid duplicates)
 function getAllActiveRooms(){
-    return Array.from(new Set(UsersState.users.map(user => user.room)))
+    return Array.from(new Set(UserState.users.map(user => user.room)))
 }
