@@ -1,4 +1,4 @@
-const socket = io('ws://localhost:3500')
+const socket = io('https://practilang.onrender.com')
 
 //Watching typing activity
 const msgInput = document.querySelector('#message')
