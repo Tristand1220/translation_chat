@@ -72,9 +72,6 @@ io.on('connection', socket => {
             rooms: getAllActiveRooms()
         })
     })
-    
-    //Upon connection, sends to all other
-    socket.broadcast.emit('message', `User ${socket.id.substring(0,5)}} connected`)
 
      // When user disconnects, sends to all others
      socket.on('disconnect', () => {
@@ -124,7 +121,7 @@ function buildMsg(name,text){
 // Adds user to a room and makes sure they're not a duplicate
 function activateUser(id, name, room){
     // User is their id , name, and room
-    const user = { id, name, room} 
+    const user = { id, name, room } 
     UserState.setUsers([
         ...UserState.users.filter(user => user.id !== id),
         user
