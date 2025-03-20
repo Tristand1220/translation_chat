@@ -1,4 +1,4 @@
-const socket = io('https://practilang.onrender.com')
+const socket = io('ws://localhost:3500') // Use https://practilang.onrender.com to launch outside local
 
 //Watching typing activity
 const msgInput = document.querySelector('#message')
@@ -15,6 +15,7 @@ const activity = document.querySelector('.activity')
 //Chat Display
 const chatDisplay = document.querySelector('.chat-display')
 
+// Sending a message
 function sendMessage(e) {
     e.preventDefault()
     if (nameInput.value && msgInput.value && langRoom.value) {
@@ -38,14 +39,24 @@ function enterRoom(e){
     }
 }
 
-// Submits form by applying the message function when submit happens
-document.querySelector('.form-msg').addEventListener('submit', sendMessage)
+// Submits form by applying the message function when submit button is clicked
+document.querySelector('.form-msg button').addEventListener('click',sendMessage);
+
+// Joining a room
 document.querySelector('.form-join').addEventListener('submit', enterRoom)
 
-// Sending user name who's typing (activity)
-msgInput.addEventListener('keypress', () => {
-    socket.emit('activity', nameInput.value)
-})
+// Translation when enter is pressed
+msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){
+        e.preventDefault();
+        aiSuggest();
+    }else{
+        // Sending user name who's typing (activity)
+        socket.emit('activity',nameInput)
+    }
+});
+        
+
 
 // Listen for messages
 socket.on("message", (data) => {
@@ -91,13 +102,65 @@ socket.on('similarity', ({ text }) => {
 
 
 //Where updating the suggestion and similarity happens...
-function showSuggestion(text){
-    aiSuggestion.textContent = ''
-    if (text) {
-        aiSuggestion.innerHTML = '<em>A more practical way you could say this:</em>'
-        // API translation should go here ?
+
+
+// Translating message
+async function aiSuggest(){
+    if(msgInput.value){
+        showLoading();
+        try{
+            // Call API and show suggestion
+            const suggestion = await fetchTranslation(msgInput.value);
+            displaySuggestion(suggestion); 
+        } catch (error){
+            // Display error if no suggestion
+            displayError();
+        }
     }
 }
+
+//Loading translation feedback
+function showLoading(){
+    const loadingText = document.createElement('div');
+    loadingText.className = 'loading-translation';
+    loadingText.textContent = 'Translating...';
+    aiSuggestion.appendChild(loadingText);
+}
+
+// Display suggestion
+function displaySuggestion(translatedText){
+    //Remove loading
+    const load = aiSuggestion.querySelector('.loading-translation')
+    if (load){
+        aiSuggestion.removeChild(load);
+    }
+    
+    if (translatedText){
+        aiSuggestion.innerHTML = `<em>A more practical way you could say this:</em>`;
+
+        const suggestionDiv = document.createElement('div');
+        suggestionDiv.className = 'translation';
+        suggestionDiv.textContent = translatedText;
+        aiSuggestion.appendChild(suggestionDiv);
+    }else{
+        displayError();
+    }
+}
+
+//Display Translation Error
+function displayError(){
+    //Remove loading
+    const load = aiSuggestion.querySelector('.loading-translation')
+    if (load){
+        aiSuggestion.removeChild(load);
+    }
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error';
+    errorDiv.textContent = 'Translation failed. PLease try again.';
+    aiSuggestion.appendChild(errorDiv);
+}
+
 function showSimilar(text){
     similarity.textContent = ''
     if (text) {
@@ -105,3 +168,29 @@ function showSimilar(text){
         // API similarity should go here ?
     }
 }
+
+
+async function fetchTranslation(text) {
+    const url = 'https://openl-translate.p.rapidapi.com/translate';
+    const options = {
+        method: 'POST',
+        headers: {
+            'x-rapidapi-key': 'secret', //Tristan has the API Key
+            'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            target_lang: 'zh-CN',
+            text: text
+        })
+    };
+    
+    try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        return result.translatedText;
+    } catch (error) {
+        console.error("Translation error: ",error);
+        return null;
+    }
+} 

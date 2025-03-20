@@ -94,7 +94,7 @@ io.on('connection', socket => {
         }
     })
 
-    // Listen for activity (keypress)
+    // Listen for activity (keydown)
     socket.on('activity', (name) => {
         const room = getUser(socket.id)?.room
         // Sends "{user} is typing..." to everyone else
