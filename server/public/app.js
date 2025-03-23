@@ -92,14 +92,6 @@ socket.on("activity", (name) => {
     }, 1000)
 })
 
-//Activities for translation
-socket.on('aiSuggestion', ({ text }) => {
-    showSuggestion(text)
-})
-socket.on('similarity', ({ text }) => {
-    showSimilar(text)
-})
-
 
 //Where updating the suggestion and similarity happens...
 
@@ -107,16 +99,24 @@ socket.on('similarity', ({ text }) => {
 // Translating message
 async function aiSuggest(){
     if(msgInput.value){
+        cleartranslations();
         showLoading();
         try{
             // Call API and show suggestion
             const suggestion = await fetchTranslation(msgInput.value);
-            displaySuggestion(suggestion); 
+            displaySuggestion(suggestion);
+            showSimilar(suggestion) 
         } catch (error){
             // Display error if no suggestion
             displayError();
         }
     }
+}
+
+function cleartranslations(){
+    aiSuggestion.innerHTML = "";
+    similarity.innerHTML ="";
+
 }
 
 //Loading translation feedback
@@ -137,11 +137,14 @@ function displaySuggestion(translatedText){
     
     if (translatedText){
         aiSuggestion.innerHTML = `<em>A more practical way you could say this:</em>`;
-
+        
         const suggestionDiv = document.createElement('div');
         suggestionDiv.className = 'translation';
         suggestionDiv.textContent = translatedText;
         aiSuggestion.appendChild(suggestionDiv);
+        
+        // Start the process for similarity comparison translation
+        showSimilar(translatedText)
     }else{
         displayError();
     }
@@ -161,11 +164,45 @@ function displayError(){
     aiSuggestion.appendChild(errorDiv);
 }
 
-function showSimilar(text){
-    similarity.textContent = ''
-    if (text) {
-        similarity.innerHTML = '<em>Which is similar to:</em>'
-        // API similarity should go here ?
+// Showing similarity of translated texted
+async function showSimilar(translatedText){
+    if(translatedText){
+
+        similarity.innerHTML = "";
+        
+        //Feedback
+        const loadingText = document.createElement('div');
+        loadingText.className = 'loading-similarity';
+        loadingText.textContent = 'Finding similarity...';
+        similarity.appendChild(loadingText);
+
+        try{
+            // Call API and show similarity
+            const post_similar = await fetchsimilarity(translatedText);
+            displaySimilar(post_similar);
+        } catch (error){
+            // Display error if no suggestion
+            displayError();
+        }
+    }
+}
+
+// Display similarity
+function displaySimilar(similarText){
+    //Remove loading
+    const load = similarity.querySelector('.loading-similarity');
+    if (load){
+        similarity.removeChild(load);
+    }
+    
+    if (similarText){
+        similarity.innerHTML = `<em>Which is similar to: </em>`
+        const similarityDiv = document.createElement('div');
+        similarityDiv.className = 'sim-translation';
+        similarityDiv.textContent = similarText;
+        similarity.appendChild(similarityDiv);
+    }else{
+        displayError();
     }
 }
 
@@ -175,7 +212,7 @@ async function fetchTranslation(text) {
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': 'secret', //Tristan has the API Key
+            'x-rapidapi-key': 'ADD_KEY',
             'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
             'Content-Type': 'application/json'
         },
@@ -194,3 +231,45 @@ async function fetchTranslation(text) {
         return null;
     }
 } 
+
+async function fetchsimilarity(text) {
+    const url = 'https://openl-translate.p.rapidapi.com/translate';
+    const options = {
+        method: 'POST',
+        headers: {
+            'x-rapidapi-key': 'ADD_KEY',
+            'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            target_lang: 'en',
+            text: text
+        })
+    };
+    
+    try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        return result.translatedText;
+    } catch (error) {
+        console.error("Similarity error: ",error);
+        return null;
+    }
+} 
+
+// DEEPSEEK API
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+        baseURL: 'https://api.deepseek.com',
+        apiKey: '<DeepSeek API Key>'
+});
+
+async function main() {
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "system", content: "You are a helpful assistant." }],
+    model: "deepseek-chat",
+  });
+
+  console.log(completion.choices[0].message.content);
+}
