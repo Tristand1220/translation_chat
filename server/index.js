@@ -20,8 +20,15 @@ const expressServer = app.listen(PORT, () => {
 // state
 const UserState = {
     users: [],
-    setUsers: function (newUsersArray){
+    waitingUsers: [],
+    setUsers: function(newUsersArray){
         this.users = newUsersArray
+    },
+    addWaitingUsers: function(user) {
+        this.waitingUsers.push(user)
+    },
+    removeWaitingUsers: function(userId) {
+        this.waitingUsers=this.waitingUsers.filter(user => user.id !== userId)
     }
 }
 
@@ -37,41 +44,83 @@ io.on('connection', socket => {
     //Upon connection, sends only to user
     socket.emit('message', buildMsg(ADMIN, "Welcome to practiLang !"))
 
-    socket.on('enterRoom', ({ name, room }) => {
+    socket.on('enterRoom', ({ name, nativeLanguage, targetLanguage }) => {
         //leave previous chat room
-        const prevRoom = getUser(socket.id)?.room
+        const prevRoom = getUser(socket.id)?.room;
         if (prevRoom){
             socket.leave(prevRoom)
             io.to(prevRoom).emit('message', buildMsg(ADMIN, `${name} has left the room`))
         }
 
-        const user = activateUser(socket.id, name, room)
+        // Creat new user
+        const newUser = {
+            id: socket.id,
+            name,
+            nativeLanguage,
+            targetLanguage,
+            room: null //Dynamically assigned
+        };
 
-        if (prevRoom) {
-            io.to(prevRoom).emit('AIsuggest', {
-                users: getUsersInRoom(prevRoom)
-            })
+        const roomName = createRoomName(nativeLanguage, targetLanguage);
+        const existingRoom = getAllActiveRooms().includes(roomName);
+        if (existingRoom){
+
+            // Updating room attribute and adding user to room
+            newUser.room = roomName;
+            activateUser(socket.id, name, roomName, nativeLanguage, targetLanguage);
+
+            // join room
+            socket.join(roomName)
+
+            //To user who joins room
+            socket.emit('message', buildMsg(ADMIN, `You have joined the ${roomName} exchange room`));
+
+            //To everyone else (new user joining)
+            socket.broadcast.to(roomName).emit('message', buildMsg(ADMIN, `${name} has joined the room`));
+            
+        } else {
+            // Finding match for chatrooom creation
+            const match = findMatch(newUser);
+
+            if (match){
+                newUser.room=roomName;
+                activateUser(socket.id, name, roomName, nativeLanguage, targetLanguage);
+                
+                // Remove user from waiting queue
+                UserState.removeWaitingUsers(match.id);
+                
+                //Doing the same for match
+                const matchSocket = io.sockets.sockets.get(match.id);
+
+                if (matchSocket) {
+                    matchSocket.join(roomName);
+                    activateUser(match.id, match.name, roomName, match.nativeLanguage, match.targetLanguage);
+
+                    // Feedback on match found
+                    matchSocket.emit('message', buildMsg(ADMIN, `You've been matched! Joined ${roomName} exchange room`));
+                    
+                }
+                // join room
+                socket.join(roomName);
+
+                //To user who joins room
+                socket.emit('message', buildMsg(ADMIN, `You have joined the ${roomName} chat room`));
+
+                //To everyone else (new user joining)
+                socket.broadcast.to(roomName).emit('message', buildMsg(ADMIN, `${newUser.name} has joined the room`));
+        } else {
+            // No match - add to waiting list
+            UserState.addWaitingUsers(newUser);
+
+            //Notify once match found
+            socket.emit('waitingForMatch',{
+                nativeLanguage,
+                targetLanguage
+            });
         }
-
-        // join room
-        socket.join(user.room)
-
-        //To user who joins room
-        socket.emit('message', buildMsg(ADMIN, `You have joined the ${user.room} chat room`))
-
-        //To everyone else (new user joining)
-        socket.broadcast.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has joined the room`))
-
-        //Update user list for room (where the suggestion will go.....)
-        io.to(user.room).emit('AIsuggest', {
-            users: getUserinRoom(user.room)
-        })
-
-        // Update similarity
-        io.emit('similar', {
-            rooms: getAllActiveRooms()
-        })
-    })
+    }
+});
+    
 
      // When user disconnects, sends to all others
      socket.on('disconnect', () => {
@@ -119,9 +168,9 @@ function buildMsg(name,text){
 // User functions
 
 // Adds user to a room and makes sure they're not a duplicate
-function activateUser(id, name, room){
+function activateUser(id, name, room, nativeLanguage,targetLanguage){
     // User is their id , name, and room
-    const user = { id, name, room } 
+    const user = { id, name, room, nativeLanguage, targetLanguage } 
     UserState.setUsers([
         ...UserState.users.filter(user => user.id !== id),
         user
@@ -149,4 +198,24 @@ function getUserinRoom(room){
 //Get all active chatrooms (set to avoid duplicates)
 function getAllActiveRooms(){
     return Array.from(new Set(UserState.users.map(user => user.room)))
+}
+
+//Create room name based on matching
+function createRoomName(lang1,lang2){
+    // Alpahabetically sort lang names for coonsitency
+    const sortedlangs =[lang1,lang2].sort();
+    return `${sortedlangs[0]}-${sortedlangs[1]}`;
+}
+
+// Chatroom matching based on compliment langs
+function findMatch(user){
+    return UserState.waitingUsers.find(waitingUsers =>
+        waitingUsers.nativeLanguage === user.targetLanguage &&
+        waitingUsers.targetLanguage === user.nativeLanguage
+    );
+}
+
+function findExistingRoom(nativeLanguage,targetLanguage) {
+    const roomName = createRoomName(nativeLanguage,targetLanguage);
+    return getAllActiveRooms().includes(roomName) ? roomName : null;
 }

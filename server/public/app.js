@@ -3,22 +3,25 @@ const socket = io('ws://localhost:3500') // Use https://practilang.onrender.com 
 //Watching typing activity
 const msgInput = document.querySelector('#message')
 
-//Watching chatname and target language
+//Watching chatname and target/native language 
 const nameInput = document.querySelector('#name')
-const langRoom = document.querySelector('#language')
+const nativeLang = document.querySelector('#dropdownMenuButton1')
+const targetLang = document.querySelector('#dropdownMenuButton2')
 
 // AI suggestions and similarity
 const aiSuggestion = document.querySelector('.AIsuggest')
 const similarity = document.querySelector('.similar')
 const activity = document.querySelector('.activity')
+const instruct = document.querySelector('.Instructions')
 
 //Chat Display
 const chatDisplay = document.querySelector('.chat-display')
+const waitingDisplay = document.querySelector('.waiting-display')
 
 // Sending a message
 function sendMessage(e) {
     e.preventDefault()
-    if (nameInput.value && msgInput.value && langRoom.value) {
+    if (nameInput.value && msgInput.value) {
         socket.emit('message', {
             name: nameInput.value,
             text: msgInput.value
@@ -28,14 +31,31 @@ function sendMessage(e) {
     msgInput.focus()
 }
 
+//Dropdown menu update
+function updatenativedown(element){
+    document.getElementById("dropdownMenuButton1").textContent = element.textContent;
+    event.preventDefault();
+}
+
+function updatetargetdown(element){
+    document.getElementById("dropdownMenuButton2").textContent = element.textContent;
+    event.preventDefault();
+}
+
 //Entering correct chatroom
 function enterRoom(e){
     e.preventDefault()
-    if (nameInput.value && langRoom.value){
+    if (nameInput.value && nativeLang.textContent !== 'Native Langauge' && targetLang.textContent !== 'Target Language'){
         socket.emit('enterRoom', {
             name: nameInput.value,
-            room: langRoom.value
+            nativeLanguage: nativeLang.textContent,
+            targetLanguage: targetLang.textContent
         })
+
+        // Waiting screen
+        showWaitingUi()
+    } else{
+        alert('Please enter a name and make a selection from both languages')
     }
 }
 
@@ -43,7 +63,14 @@ function enterRoom(e){
 document.querySelector('.form-msg button').addEventListener('click',sendMessage);
 
 // Joining a room
-document.querySelector('.form-join').addEventListener('submit', enterRoom)
+document.querySelector('.form-join').addEventListener('submit', (e) => {
+    if (nativeLang.value === 'Native Langauge' && targetLang.value === 'Traget Language'){
+        e.preventDefault()
+        alert('Please select and native and target language')
+    } else{
+        enterRoom(e)
+    }
+})
 
 // Translation when enter is pressed
 msgInput.addEventListener('keydown', (e) => {
@@ -57,15 +84,26 @@ msgInput.addEventListener('keydown', (e) => {
 });
         
 
+// Listening for waiting UI
+socket.on('waitingForMatch', (data) => {
+    showWaitingUi()
+})
+
 
 // Listen for messages
-socket.on("message", (data) => {
+socket.on('message', (data) => {
     activity.textContent = ""
     const { name, text, time } = data
     const li =  document.createElement('li')
     li.className = 'post'
     if (name === nameInput.value)li.className = 'post post--right'
     if (name !== nameInput.value && name !== 'Admin')li.className = 'post post--left'
+
+    // If message from Admin, hide waiting UI
+    if (data.name == 'Admin' && data.text.includes('joined')){
+        hideWaitingUi()
+    }
+
     //Creating the message in chat from users, with name time as a header
     if (name !== 'Admin') {
         li.innerHTML = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}">
@@ -92,6 +130,21 @@ socket.on("activity", (name) => {
     }, 1000)
 })
 
+// Waiting for matches UI loading
+function showWaitingUi(){
+    chatDisplay.style.display ='none'
+
+    waitingDisplay.style.display ='block'
+    waitingDisplay.innerHTML =` <div class="waiting-message"><h3>Waiting for a langauge partner...</h3><p>Looking for someone who speaks <strong>${targetLang.textContent}</strong> and wants to learn <strong>${nativeLang.textContent}</strong></p> <div class ="spinner"></div></div>`
+    instruct.textContent = ""
+}
+
+// Removing waiting screen
+function hideWaitingUi(){
+    waitingDisplay.style.display ='none'
+    chatDisplay.style.display ='block'
+    instruct.textContent = 'Press "Enter" for translations and practical similarity';
+}
 
 //Where updating the suggestion and similarity happens...
 
@@ -102,7 +155,7 @@ async function aiSuggest(){
         cleartranslations();
         showLoading();
         try{
-            // Call API and show suggestion
+            // Call API and show suggestion (will change to new API)
             const suggestion = await fetchTranslation(msgInput.value);
             displaySuggestion(suggestion);
             showSimilar(suggestion) 
@@ -177,7 +230,7 @@ async function showSimilar(translatedText){
         similarity.appendChild(loadingText);
 
         try{
-            // Call API and show similarity
+            // Call API and show similarity (will change to new API)
             const post_similar = await fetchsimilarity(translatedText);
             displaySimilar(post_similar);
         } catch (error){
@@ -258,9 +311,8 @@ async function fetchsimilarity(text) {
 } 
 
 // DEEPSEEK API
-import OpenAI from "openai";
 
-const openai = new OpenAI({
+/*const openai = new OpenAI({
         baseURL: 'https://api.deepseek.com',
         apiKey: '<DeepSeek API Key>'
 });
@@ -272,4 +324,4 @@ async function main() {
   });
 
   console.log(completion.choices[0].message.content);
-}
+}*/

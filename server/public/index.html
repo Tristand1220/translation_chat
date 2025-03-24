@@ -6,24 +6,55 @@
     <title>practiLang</title>
     <link href = "style.css" rel ="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js" integrity="sha512-8ExARjWWkIllMlNzVg7JKq9RKWPlJABQUNq6YvAjE/HobctjH/NA+bSiDMDvouBVjp4Wwnf1VP1OEv7Zgjtuxw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
     <script defer src ="app.js"></script>
 </head>
 <body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <main>
         <form class="form-join">
             <!-- Names for users and language of prefernce -->
             <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
-            <input type="text" id="language" placeholder="Langauge room (aaa-bbb)" size="5" required>
+            <div class = "dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Native Language
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <h6 class="dropdown-header">I'm fluent in...</h6>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">Spanish</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">English</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">Chinese</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">French</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">Vietnamese</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">Japenese</a>
+                    <a class="dropdown-item" onclick="updatenativedown(this)">Arabic</a>
+                </ul>
+            </div>
+            <div class = "dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Target Language
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                    <h6 class="dropdown-header">I want to learn......</h6>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">English</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">Spanish</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">Chinese</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">French</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">Vietnamese</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">Japenese</a>
+                    <a class="dropdown-item" onclick="updatetargetdown(this)">Arabic</a>
+                </ul>
+            </div>
             <button id="join" type="submit">Join</button>
         </form>
         
-        <ul class="chat-display"></ul>
+        <ul class="chat-display " style="display: block;"></ul>
+        <div class="waiting-display" style="display: none;"></div>
 
         <div class="AI-container">
-            <!-- AKA: user-list -->
             <p class = "Instructions"> Press "Enter" for translations and practical similarity</p>
             <p class = "AIsuggest"></p>
-            <!-- AKA: room-list -->
             <p class="similar"></p> 
             <p class="activity"></p>
         </div>
