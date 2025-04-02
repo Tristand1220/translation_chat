@@ -6,4 +6,8 @@
 .env.test
 .env.test.local
 .env.production
+<<<<<<< Updated upstream
 .env.production.local
+=======
+.env.production.local
+>>>>>>> Stashed changes
