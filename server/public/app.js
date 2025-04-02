@@ -32,14 +32,12 @@ function sendMessage(e) {
 }
 
 //Dropdown menu update
-function updatenativedown(element){
+window.updatenativedown = function(element){
     document.getElementById("dropdownMenuButton1").textContent = element.textContent;
-    event.preventDefault();
 }
 
-function updatetargetdown(element){
+window.updatetargetdown = function(element){
     document.getElementById("dropdownMenuButton2").textContent = element.textContent;
-    event.preventDefault();
 }
 
 //Entering correct chatroom
@@ -121,7 +119,7 @@ socket.on('message', (data) => {
 // Timer for typing message
 let activityTimer
 socket.on("activity", (name) => {
-    activity.textContent = `${name} is typing...`
+    activity.textContent = `${nameInput.value} is typing...`
 
     // Clear after 1 second
     clearTimeout(activityTimer)
@@ -260,12 +258,45 @@ function displaySimilar(similarText){
 }
 
 
+// The API Structures
+
+// DEEPSEEK API
+
+const translateModel = new ChatDeepSeek({
+    model: "deepseek-reasoner",
+    baseURL: 'https://api.deepseek.com',
+    apiKey: my_key, //import.meta.env.VITE_DEEPSEEK_API_KEY
+    temperature: 3,
+    // other params...
+  });
+  console.log("API KEY:", my_key); //import.meta.env.VITE_DEEPSEEK_API_KEY
+  
+  
+  const suggestionPrompt = ChatPromptTemplate.fromMessages([
+    [
+      "system",
+      "You are a helpful assistant that translates {input_language} to {output_language} in a way that makes the translation a more practial and culturally appropriate way of saying the given message. Only return the translation you deem to be the most practical without explanation",
+    ],
+    ["human", "{input}"],
+  ]);
+  
+  const similarityPrompt = ChatPromptTemplate.fromMessages([
+      [
+        "system",
+        "This is a translated message from {input_language} to {output_language}, provide a contextually and cultural similar alternative phrasing of this message in {input_language}. Return without an explanation",
+      ],
+      ["human", "{translatedText}"],
+    ]);
+
+const suggestionChain = suggestionPrompt.pipe(translateModel).pipe(new StringOutputParser ());
+const similiarityChain = similarityPrompt.pipe(translateModel).pipe(new StringOutputParser ());
+
 async function fetchTranslation(text) {
-    const url = 'https://openl-translate.p.rapidapi.com/translate';
+    /*const url = 'https://openl-translate.p.rapidapi.com/translate';
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': 'ADD_KEY',
+            'x-rapidapi-key': 'Open_L Key',
             'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
             'Content-Type': 'application/json'
         },
@@ -273,24 +304,27 @@ async function fetchTranslation(text) {
             target_lang: 'zh-CN',
             text: text
         })
-    };
+    };*/
     
     try {
-        const response = await fetch(url, options);
-        const result = await response.json();
-        return result.translatedText;
+        const result = await suggestionChain.invoke({
+            input_language: nativeLang.textContent,
+            output_language: targetLang.textContent,
+            input: text
+        });
+        return result;
     } catch (error) {
         console.error("Translation error: ",error);
         return null;
     }
 } 
 
-async function fetchsimilarity(text) {
-    const url = 'https://openl-translate.p.rapidapi.com/translate';
+async function fetchsimilarity(translatedText) {
+    /*const url = 'https://openl-translate.p.rapidapi.com/translate';
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': 'ADD_KEY',
+            'x-rapidapi-key': 'Open_L Key',
             'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
             'Content-Type': 'application/json'
         },
@@ -298,30 +332,17 @@ async function fetchsimilarity(text) {
             target_lang: 'en',
             text: text
         })
-    };
+    };*/
     
     try {
-        const response = await fetch(url, options);
-        const result = await response.json();
-        return result.translatedText;
+        const result = await similiarityChain.invoke({
+            input_language: nativeLang.textContent,
+            output_language: targetLang.textContent,
+            input: translatedText
+        });
+        return result;
     } catch (error) {
         console.error("Similarity error: ",error);
         return null;
     }
 } 
-
-// DEEPSEEK API
-
-/*const openai = new OpenAI({
-        baseURL: 'https://api.deepseek.com',
-        apiKey: '<DeepSeek API Key>'
-});
-
-async function main() {
-  const completion = await openai.chat.completions.create({
-    messages: [{ role: "system", content: "You are a helpful assistant." }],
-    model: "deepseek-chat",
-  });
-
-  console.log(completion.choices[0].message.content);
-}*/
