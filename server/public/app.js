@@ -211,7 +211,7 @@ function displayError(){
 
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error';
-    errorDiv.textContent = 'Translation failed. PLease try again.';
+    errorDiv.textContent = 'Translation failed. Please try again.';
     aiSuggestion.appendChild(errorDiv);
 }
 
@@ -262,87 +262,69 @@ function displaySimilar(similarText){
 
 // DEEPSEEK API
 
-const translateModel = new ChatDeepSeek({
-    model: "deepseek-reasoner",
-    baseURL: 'https://api.deepseek.com',
-    apiKey: my_key, //import.meta.env.VITE_DEEPSEEK_API_KEY
-    temperature: 3,
-    // other params...
-  });
-  console.log("API KEY:", my_key); //import.meta.env.VITE_DEEPSEEK_API_KEY
-  
-  
-  const suggestionPrompt = ChatPromptTemplate.fromMessages([
-    [
-      "system",
-      "You are a helpful assistant that translates {input_language} to {output_language} in a way that makes the translation a more practial and culturally appropriate way of saying the given message. Only return the translation you deem to be the most practical without explanation",
-    ],
-    ["human", "{input}"],
-  ]);
-  
-  const similarityPrompt = ChatPromptTemplate.fromMessages([
-      [
-        "system",
-        "This is a translated message from {input_language} to {output_language}, provide a contextually and cultural similar alternative phrasing of this message in {input_language}. Return without an explanation",
-      ],
-      ["human", "{translatedText}"],
-    ]);
+const suggestionPrompt = "You are a helpful assistant that translates {input_language} to {output_language} in a way that makes the translation a more practial and culturally appropriate way of saying the given message. Only return the translation you deem to be the most practical without explanation"
 
-const suggestionChain = suggestionPrompt.pipe(translateModel).pipe(new StringOutputParser ());
-const similiarityChain = similarityPrompt.pipe(translateModel).pipe(new StringOutputParser ());
+const similarityPrompt = "Given a translated message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Return your best evaluation without an explanation"
 
+const apiKey = "your_key"
 async function fetchTranslation(text) {
-    /*const url = 'https://openl-translate.p.rapidapi.com/translate';
-    const options = {
+    try{
+        
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions',{
         method: 'POST',
         headers: {
-            'x-rapidapi-key': 'Open_L Key',
-            'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            target_lang: 'zh-CN',
-            text: text
+            model: "deepseek-chat",
+            messages: [
+                {
+                    role: "system",
+                    content: suggestionPrompt.replace("{input_language}", nativeLang.textContent).replace("{output_language}", targetLang.textContent)},
+                    {
+                        role: "user",
+                        content: text
+                    }
+            ],
+            temperature: 0.3
         })
-    };*/
-    
-    try {
-        const result = await suggestionChain.invoke({
-            input_language: nativeLang.textContent,
-            output_language: targetLang.textContent,
-            input: text
-        });
-        return result;
+    });
+    const data = await response.json();
+    return data.choices[0].message.content;
     } catch (error) {
         console.error("Translation error: ",error);
-        return null;
+        return null
     }
-} 
-
+}
+    
 async function fetchsimilarity(translatedText) {
-    /*const url = 'https://openl-translate.p.rapidapi.com/translate';
-    const options = {
+    console.log("Avaliable vars:", import.meta.env);
+    try{
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions',{
         method: 'POST',
         headers: {
-            'x-rapidapi-key': 'Open_L Key',
-            'x-rapidapi-host': 'openl-translate.p.rapidapi.com',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            target_lang: 'en',
-            text: text
+            model: "deepseek-chat",
+            messages: [
+                {
+                    role: "system",
+                    content: similarityPrompt.replace("{input_language}", nativeLang.textContent).replace("{output_language}", targetLang.textContent)},
+                    {
+                        role: "user",
+                        content: translatedText
+                    }
+            ],
+            temperature: 0.3
         })
-    };*/
-    
-    try {
-        const result = await similiarityChain.invoke({
-            input_language: nativeLang.textContent,
-            output_language: targetLang.textContent,
-            input: translatedText
-        });
-        return result;
+    });
+    const data = await response.json();
+    return data.choices[0].message.content;
     } catch (error) {
         console.error("Similarity error: ",error);
-        return null;
+        return null
     }
-} 
+}
