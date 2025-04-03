@@ -206,7 +206,7 @@ input, button {
     max-width: 900px; /* align w/chat display width */
     min-height: 1.5rem;
     margin: 0.5rem 0;
-    padding: .75rem .25rem;
+    
 }
 
 .activity,
@@ -218,4 +218,11 @@ input, button {
 .Instructions{
     padding-bottom: 1rem;
     align-items: center;
+}
+
+.translation:hover{
+    border-radius: 1rem;
+    transition: 0.2s;
+    text-decoration: underline;
+    color: #C6B2D7;
 }

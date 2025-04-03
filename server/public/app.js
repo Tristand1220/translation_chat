@@ -80,7 +80,6 @@ msgInput.addEventListener('keydown', (e) => {
         socket.emit('activity',nameInput)
     }
 });
-        
 
 // Listening for waiting UI
 socket.on('waitingForMatch', (data) => {
@@ -192,6 +191,15 @@ function displaySuggestion(translatedText){
         const suggestionDiv = document.createElement('div');
         suggestionDiv.className = 'translation';
         suggestionDiv.textContent = translatedText;
+
+        // Makes suggestion a clickable element to be copy and pasted to message field
+        suggestionDiv.style.cursor = 'pointer';
+
+        suggestionDiv.onclick = function () {
+            document.getElementById('message').value = translatedText;
+            document.getElementById('message').focus();
+            console.log("Copied :", translatedText);
+        };
         aiSuggestion.appendChild(suggestionDiv);
         
         // Start the process for similarity comparison translation
@@ -251,6 +259,7 @@ function displaySimilar(similarText){
         const similarityDiv = document.createElement('div');
         similarityDiv.className = 'sim-translation';
         similarityDiv.textContent = similarText;
+
         similarity.appendChild(similarityDiv);
     }else{
         displayError();
@@ -264,7 +273,8 @@ function displaySimilar(similarText){
 
 const suggestionPrompt = "You are a helpful assistant that translates {input_language} to {output_language} in a way that makes the translation a more practial and culturally appropriate way of saying the given message. Only return the translation you deem to be the most practical without explanation"
 
-const similarityPrompt = "Given a translated message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Return your best evaluation without an explanation"
+const similarityPrompt = "Given a translated message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
+
 
 const apiKey = "your_key"
 async function fetchTranslation(text) {
