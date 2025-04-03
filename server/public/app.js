@@ -62,7 +62,7 @@ document.querySelector('.form-msg button').addEventListener('click',sendMessage)
 
 // Joining a room
 document.querySelector('.form-join').addEventListener('submit', (e) => {
-    if (nativeLang.value === 'Native Langauge' && targetLang.value === 'Traget Language'){
+    if (nativeLang.value === 'Native Langauge' && targetLang.value === 'Target Language'){
         e.preventDefault()
         alert('Please select and native and target language')
     } else{
@@ -77,7 +77,7 @@ msgInput.addEventListener('keydown', (e) => {
         aiSuggest();
     }else{
         // Sending user name who's typing (activity)
-        socket.emit('activity',nameInput)
+        socket.emit('activity',nameInput.value)
     }
 });
 
@@ -92,9 +92,13 @@ socket.on('message', (data) => {
     activity.textContent = ""
     const { name, text, time } = data
     const li =  document.createElement('li')
-    li.className = 'post'
-    if (name === nameInput.value)li.className = 'post post--right'
-    if (name !== nameInput.value && name !== 'Admin')li.className = 'post post--left'
+
+    li.classList.add('post')
+    if (name === nameInput.value){
+        li.classList.add('post--right')
+    }else if (name !== 'Admin'){
+        li.classList.add('post--left')
+    }
 
     // If message from Admin, hide waiting UI
     if (data.name == 'Admin' && data.text.includes('joined')){
@@ -118,7 +122,7 @@ socket.on('message', (data) => {
 // Timer for typing message
 let activityTimer
 socket.on("activity", (name) => {
-    activity.textContent = `${nameInput.value} is typing...`
+    activity.textContent = `${name} is typing...`
 
     // Clear after 1 second
     clearTimeout(activityTimer)
@@ -140,7 +144,7 @@ function showWaitingUi(){
 function hideWaitingUi(){
     waitingDisplay.style.display ='none'
     chatDisplay.style.display ='block'
-    instruct.textContent = 'Press "Enter" for translations and practical similarity';
+    instruct.textContent = 'Press "Enter" for suggestions and practical similarity';
 }
 
 //Where updating the suggestion and similarity happens...
@@ -173,7 +177,7 @@ function cleartranslations(){
 function showLoading(){
     const loadingText = document.createElement('div');
     loadingText.className = 'loading-translation';
-    loadingText.textContent = 'Translating...';
+    loadingText.textContent = 'Finding a better suggestion...';
     aiSuggestion.appendChild(loadingText);
 }
 
@@ -219,7 +223,7 @@ function displayError(){
 
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error';
-    errorDiv.textContent = 'Translation failed. Please try again.';
+    errorDiv.textContent = 'Suggestion failed. Please try again.';
     aiSuggestion.appendChild(errorDiv);
 }
 
@@ -271,9 +275,9 @@ function displaySimilar(similarText){
 
 // DEEPSEEK API
 
-const suggestionPrompt = "You are a helpful assistant that translates {input_language} to {output_language} in a way that makes the translation a more practial and culturally appropriate way of saying the given message. Only return the translation you deem to be the most practical without explanation"
+const suggestionPrompt = "You are a helpful assistant that reads a message in {output_language} and returns a more practial and culturally appropriate way of saying the given message in {output_language}. Only return the suggestion you deem to be the most practical without explanation"
 
-const similarityPrompt = "Given a translated message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
+const similarityPrompt = "Given a message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
 
 
 const apiKey = "your_key"
@@ -291,7 +295,7 @@ async function fetchTranslation(text) {
             messages: [
                 {
                     role: "system",
-                    content: suggestionPrompt.replace("{input_language}", nativeLang.textContent).replace("{output_language}", targetLang.textContent)},
+                    content: suggestionPrompt.replace("{output_language}", targetLang.textContent)},
                     {
                         role: "user",
                         content: text
