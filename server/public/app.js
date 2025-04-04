@@ -275,12 +275,12 @@ function displaySimilar(similarText){
 
 // DEEPSEEK API
 
-const suggestionPrompt = "You are a helpful assistant that reads a message in {output_language} and returns a more practial and culturally appropriate way of saying the given message in {output_language}. Only return the suggestion you deem to be the most practical without explanation"
+const suggestionPrompt = "You are a helpful assistant that recieves a message and returns a more practial and culturally appropriate way of saying the given message in the same langauge it was presented to you. Only return the suggestion you deem to be the most practical without explanation or additional context"
 
-const similarityPrompt = "Given a message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
+const similarityPrompt ="Given a message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
 
 
-const apiKey = "your_key"
+const apiKey = "your_api_key"
 async function fetchTranslation(text) {
     try{
         
