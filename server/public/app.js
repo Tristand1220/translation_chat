@@ -280,7 +280,7 @@ const suggestionPrompt = "You are a helpful assistant that recieves a message an
 const similarityPrompt ="Given a message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
 
 
-const apiKey = "your_api_key"
+const apiKey = process.env.DEEPSEEK_API_KEY
 async function fetchTranslation(text) {
     try{
         
