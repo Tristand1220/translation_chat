@@ -241,7 +241,7 @@ async function showSimilar(translatedText){
 
         try{
             // Call API and show similarity (will change to new API)
-            const post_similar = await fetchsimilarity(translatedText);
+            const post_similar = await fetchSimilarity(translatedText);
             displaySimilar(post_similar);
         } catch (error){
             // Display error if no suggestion
@@ -275,70 +275,55 @@ function displaySimilar(similarText){
 
 // DEEPSEEK API
 
-const suggestionPrompt = "You are a helpful assistant that recieves a message and returns a more practial and culturally appropriate way of saying the given message in the same langauge it was presented to you. Only return the suggestion you deem to be the most practical without explanation or additional context"
-
-const similarityPrompt ="Given a message in {output_language}, provide a contextually and culturally similar alternative phrasing of this message translated in {input_language}. Only return the translation you deem to be the most similar without explanation"
-
-
-const apiKey = process.env.DEEPSEEK_API_KEY
+// Call translation API endpoint
 async function fetchTranslation(text) {
-    try{
+    try {
+        const response = await fetch('/api/suggestion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: text,
+                targetLanguage: targetLang.textContent
+            })
+        });
         
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions',{
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-                {
-                    role: "system",
-                    content: suggestionPrompt.replace("{output_language}", targetLang.textContent)},
-                    {
-                        role: "user",
-                        content: text
-                    }
-            ],
-            temperature: 0.3
-        })
-    });
-    const data = await response.json();
-    return data.choices[0].message.content;
+        if (!response.ok) {
+            throw new Error('Translation request failed');
+        }
+        
+        const data = await response.json();
+        return data.translation;
     } catch (error) {
-        console.error("Translation error: ",error);
-        return null
+        console.error("Translation error:", error);
+        return null;
     }
 }
-    
-async function fetchsimilarity(translatedText) {
-    console.log("Avaliable vars:", import.meta.env);
-    try{
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions',{
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-                {
-                    role: "system",
-                    content: similarityPrompt.replace("{input_language}", nativeLang.textContent).replace("{output_language}", targetLang.textContent)},
-                    {
-                        role: "user",
-                        content: translatedText
-                    }
-            ],
-            temperature: 0.3
-        })
-    });
-    const data = await response.json();
-    return data.choices[0].message.content;
+
+// Call similarity API endpoint
+async function fetchSimilarity(translatedText) {
+    try {
+        const response = await fetch('/api/similarity', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: translatedText,
+                nativeLanguage: nativeLang.textContent,
+                targetLanguage: targetLang.textContent
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Similarity request failed');
+        }
+        
+        const data = await response.json();
+        return data.similarity;
     } catch (error) {
-        console.error("Similarity error: ",error);
-        return null
+        console.error("Similarity error:", error);
+        return null;
     }
 }

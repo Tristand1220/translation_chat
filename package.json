@@ -1,6 +1,18 @@
 {
+  "scripts": {
+    "build": "webpack"
+  },
   "dependencies": {
     "bootstrap": "^5.3.3",
     "openai": "^4.89.0"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/dotenv-webpack": "^7.0.8",
+    "@types/express": "^5.0.1",
+    "dotenv": "^16.4.7",
+    "dotenv-webpack": "^8.1.0",
+    "webpack": "^5.99.5",
+    "webpack-cli": "^6.0.1"
   }
 }
