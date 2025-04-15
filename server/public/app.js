@@ -1,4 +1,4 @@
-const socket = io('ws://localhost:3500') // Use https://practilang.onrender.com to launch outside local
+const socket = io('https://practilang.onrender.com') // Use https://practilang.onrender.com to launch outside local
 
 //Watching typing activity
 const msgInput = document.querySelector('#message')
